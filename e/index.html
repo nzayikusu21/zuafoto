@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>zuafoto — Galerie de l'événement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10162A;
+    --surface:#1B2440;
+    --cream:#F5EFE1;
+    --cream-2:#FBF7EF;
+    --border:rgba(245,239,225,0.10);
+    --cream-border:rgba(27,33,54,0.10);
+    --cream-border-2:rgba(27,33,54,0.16);
+    --gold:#C6962E;
+    --gold-soft:#D9AE5E;
+    --paper:#F5EFE1;
+    --muted:rgba(245,239,225,0.62);
+    --ink-on-cream:#1B2136;
+    --muted-on-cream:#6B6F7D;
+    --theme: #C6962E; /* overridden per-event via inline style on :root */
+    --radius:18px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--cream); color:var(--ink-on-cream);
+    font-family:'Plus Jakarta Sans', sans-serif; -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y: contain;
+  }
+  .display{ font-family:'Fraunces', serif; }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+  button{ font-family:inherit; }
+  .hidden{ display:none !important; }
+  :focus-visible{ outline:2px solid var(--theme); outline-offset:2px; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:13px 22px; border-radius:100px; font-weight:600; font-size:15px;
+    border:1px solid transparent; cursor:pointer; transition:transform .15s ease;
+  }
+  .btn-theme{ background:var(--theme); color:#fff; }
+  .btn-theme:hover{ transform:translateY(-1px); }
+  .btn-navy{ background:var(--ink); color:var(--paper); }
+  .btn-ghost{ background:transparent; border-color:var(--cream-border-2); color:var(--ink-on-cream); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  /* ================= ENTRY SCREEN ================= */
+  #screen-entry{
+    min-height:100vh; position:relative; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .entry-bg{
+    position:fixed; inset:0; background-size:cover; background-position:center;
+  }
+  .entry-bg::after{
+    content:''; position:absolute; inset:0; background:rgba(16,22,42,0.72);
+  }
+  .entry-card{
+    position:relative; z-index:1; max-width:400px; width:100%; background:var(--cream-2);
+    border-radius:24px; padding:40px 32px; text-align:center; box-shadow:0 40px 90px -30px rgba(0,0,0,0.6);
+  }
+  .entry-eyebrow{ font-size:11.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--theme); font-weight:700; margin-bottom:14px; }
+  .entry-title{ font-size:30px; font-weight:500; margin:0 0 10px; letter-spacing:-0.01em; }
+  .entry-welcome{ font-size:14.5px; color:var(--muted-on-cream); line-height:1.6; margin:0 0 26px; font-style:italic; }
+  .entry-input{
+    width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--cream-border-2);
+    background:#fff; font-size:15px; margin-bottom:14px; text-align:center; font-family:inherit;
+  }
+  .entry-note{ font-size:12px; color:var(--muted-on-cream); margin-top:16px; }
+
+  /* ================= GALLERY SCREEN ================= */
+  #screen-gallery{ min-height:100vh; padding-bottom:110px; }
+  .gallery-header{
+    position:sticky; top:0; z-index:20; background:var(--ink); color:var(--paper);
+    padding:16px 18px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .gallery-header .ev-title{ font-size:16.5px; font-weight:600; }
+  .gallery-header .ev-sub{ font-size:11.5px; color:var(--muted); }
+  .guest-chip{
+    display:flex; align-items:center; gap:8px; background:rgba(245,239,225,0.08); padding:7px 12px; border-radius:100px; font-size:12.5px;
+  }
+  .guest-avatar{ width:20px; height:20px; border-radius:50%; background:var(--theme); flex-shrink:0; }
+
+  .filter-row{
+    display:flex; gap:8px; padding:14px 16px; overflow-x:auto; background:var(--cream-2); border-bottom:1px solid var(--cream-border);
+  }
+  .filter-chip{
+    flex-shrink:0; padding:7px 15px; border-radius:100px; font-size:12.5px; font-weight:600;
+    border:1px solid var(--cream-border-2); color:var(--muted-on-cream); cursor:pointer; white-space:nowrap;
+  }
+  .filter-chip.active{ background:var(--ink); border-color:var(--ink); color:var(--paper); }
+
+  .refresh-bar{
+    display:flex; align-items:center; justify-content:space-between; padding:12px 16px 4px; font-size:12.5px; color:var(--muted-on-cream);
+  }
+  .refresh-btn{ display:flex; align-items:center; gap:6px; color:var(--theme); font-weight:600; cursor:pointer; background:none; border:none; font-size:12.5px; padding:4px; }
+  .refresh-btn svg{ width:14px; height:14px; transition:transform .5s ease; }
+  .refresh-btn.spinning svg{ transform:rotate(360deg); }
+
+  .photo-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:8px 16px 24px; }
+  @media (min-width:640px){ .photo-grid{ grid-template-columns:repeat(3,1fr); max-width:720px; margin:0 auto; } }
+  .photo-card{ background:var(--cream-2); border:1px solid var(--cream-border); border-radius:14px; overflow:hidden; }
+  .photo-frame{ aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; }
+  .photo-frame svg{ width:32%; height:32%; opacity:0.85; }
+  .photo-caption{ padding:9px 10px 11px; }
+  .photo-caption .n{ font-size:12px; font-weight:700; }
+  .photo-caption .t{ font-size:10px; color:var(--muted-on-cream); font-family:'JetBrains Mono',monospace; }
+
+  .empty-gallery{ text-align:center; padding:70px 24px; color:var(--muted-on-cream); }
+  .empty-gallery .e{ font-size:34px; margin-bottom:12px; }
+
+  .fab{
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%); z-index:30;
+    width:64px; height:64px; border-radius:50%; background:var(--theme); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 16px 30px -10px rgba(0,0,0,0.45);
+  }
+  .fab svg{ width:26px; height:26px; }
+
+  /* ================= UPLOAD SHEET ================= */
+  .sheet-overlay{
+    position:fixed; inset:0; background:rgba(16,22,42,0.55); z-index:40; display:flex; align-items:flex-end; justify-content:center;
+  }
+  .sheet{
+    background:var(--cream-2); width:100%; max-width:480px; border-radius:24px 24px 0 0; padding:22px 22px 30px;
+    max-height:88vh; overflow-y:auto;
+  }
+  .sheet-handle{ width:40px; height:4px; background:var(--cream-border-2); border-radius:100px; margin:0 auto 18px; }
+  .sheet h3{ font-size:18px; margin:0 0 16px; text-align:center; }
+
+  .upload-zone{
+    border:1.5px dashed var(--cream-border-2); border-radius:16px; padding:32px 20px; text-align:center;
+    color:var(--muted-on-cream); font-size:13.5px; cursor:pointer; margin-bottom:18px;
+  }
+  .upload-zone.has-preview{ padding:0; border-style:solid; }
+  .upload-preview{ width:100%; max-height:280px; object-fit:cover; border-radius:14px; display:block; }
+
+  .tag-select{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+  .tag-option{
+    padding:8px 15px; border-radius:100px; font-size:13px; font-weight:600; border:1px solid var(--cream-border-2);
+    color:var(--muted-on-cream); cursor:pointer;
+  }
+  .tag-option.selected{ background:var(--theme); border-color:var(--theme); color:#fff; }
+
+  .sheet-actions{ display:flex; gap:10px; }
+  .sheet-actions .btn{ flex:1; }
+
+  .toast{
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0;
+    background:var(--ink); color:var(--paper); padding:13px 22px; border-radius:100px; font-size:13.5px; font-weight:600;
+    box-shadow:0 20px 40px -14px rgba(0,0,0,0.5); transition:all .25s ease; z-index:200; pointer-events:none;
+    display:flex; align-items:center; gap:8px; white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast .dot{ width:7px; height:7px; border-radius:50%; background:var(--theme); flex-shrink:0; }
+
+  /* ================= CLOSED STATE ================= */
+  #screen-closed{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--ink); color:var(--paper); text-align:center;
+  }
+  #screen-closed .c{ max-width:360px; }
+  #screen-closed h2{ font-size:24px; margin:14px 0 10px; }
+  #screen-closed p{ color:var(--muted); font-size:14.5px; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<!-- ================= ENTRY SCREEN ================= -->
+<div id="screen-entry">
+  <div class="entry-bg" id="entry-bg"></div>
+  <div class="entry-card">
+    <div class="entry-eyebrow" id="entry-eyebrow">GALERIE PHOTO PARTAGÉE</div>
+    <h1 class="display entry-title" id="entry-title">Chargement…</h1>
+    <p class="entry-welcome" id="entry-welcome">Merci de revivre ce moment avec nous !</p>
+    <input type="text" class="entry-input" id="guest-name-input" placeholder="Ton prénom" maxlength="30">
+    <button class="btn btn-theme" style="width:100%;" id="btn-enter-gallery">Entrer dans la galerie →</button>
+    <p class="entry-note">Aucune application requise · Ton prénom sert uniquement à identifier tes photos</p>
+  </div>
+</div>
+
+<!-- ================= GALLERY SCREEN ================= -->
+<div id="screen-gallery" class="hidden">
+  <div class="gallery-header">
+    <div>
+      <div class="ev-title" id="gal-title"></div>
+      <div class="ev-sub" id="gal-sub">Galerie en direct</div>
+    </div>
+    <div class="guest-chip"><span class="guest-avatar"></span><span id="guest-chip-name">Toi</span></div>
+  </div>
+
+  <div class="filter-row" id="filter-row">
+    <div class="filter-chip active" data-tag="Tous">Tous</div>
+    <div class="filter-chip" data-tag="Cérémonie">Cérémonie</div>
+    <div class="filter-chip" data-tag="Réception">Réception</div>
+    <div class="filter-chip" data-tag="Piste">Piste de danse</div>
+    <div class="filter-chip" data-tag="Spontané">Spontané</div>
+  </div>
+
+  <div class="refresh-bar">
+    <span id="photo-count-label">0 photos</span>
+    <button class="refresh-btn" id="btn-refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg>
+      Actualiser
+    </button>
+  </div>
+
+  <div class="photo-grid" id="photo-grid"></div>
+  <div class="empty-gallery hidden" id="gallery-empty">
+    <div class="e">📸</div>
+    <div class="display" style="font-size:17px; margin-bottom:6px;">Aucune photo pour l'instant</div>
+    <div>Sois le premier à partager un souvenir !</div>
+  </div>
+
+  <button class="fab" id="btn-open-upload" aria-label="Ajouter une photo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 7h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+  </button>
+</div>
+
+<!-- ================= UPLOAD SHEET ================= -->
+<div id="upload-sheet-overlay" class="sheet-overlay hidden">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 class="display">Ajouter une photo</h3>
+
+    <label class="upload-zone" id="upload-zone" for="photo-file-input">
+      📷 Touche pour prendre une photo ou en choisir une
+    </label>
+    <input type="file" accept="image/*" capture="environment" id="photo-file-input" class="hidden">
+
+    <div class="tag-select" id="tag-select">
+      <div class="tag-option selected" data-tag="Cérémonie">Cérémonie</div>
+      <div class="tag-option" data-tag="Réception">Réception</div>
+      <div class="tag-option" data-tag="Piste">Piste de danse</div>
+      <div class="tag-option" data-tag="Spontané">Spontané</div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="btn-cancel-upload">Annuler</button>
+      <button class="btn btn-theme" id="btn-send-upload" disabled>Envoyer la photo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CLOSED STATE ================= -->
+<div id="screen-closed" class="hidden">
+  <div class="c">
+    <div style="font-size:34px;">🔒</div>
+    <h2 class="display">Cette galerie est fermée</h2>
+    <p>La période de partage pour cet événement est terminée. Merci d'avoir fait partie de la fête !</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toast-text">Photo envoyée</span></div>
+
+<script>
+  // ================= REAL EVENT FETCH =================
+  const params = new URLSearchParams(location.search);
+  const slug = params.get('slug') || 'demo';
+
+  let currentEvent = null;
+
+  // TODO: photos now come from GET /api/gallery/:slug — see loadGallery() below
+  let allPhotos = [];
+  const frameGradients = [
+    'linear-gradient(135deg,#1B2440,#2C3C68)', 'linear-gradient(135deg,#241d10,#4a3b18)',
+    'linear-gradient(135deg,#172438,#22344f)', 'linear-gradient(135deg,#1e2445,#2f3a68)',
+  ];
+
+  let currentFilter = 'Tous';
+  let selectedUploadTag = 'Cérémonie';
+  let uploadedFile = null;
+
+  function toast(msg){
+    const t = document.getElementById('toast');
+    document.getElementById('toast-text').textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=> t.classList.remove('show'), 2200);
+  }
+  function cameraSVG(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="#F5EFE1"><path d="M4 7h3l2-3h6l2 3h3v12H4z" stroke-width="1.4"/><circle cx="12" cy="13" r="3.5" stroke-width="1.4"/></svg>';
+  }
+
+  // ================= INIT =================
+  function applyTheme(hex){
+    document.documentElement.style.setProperty('--theme', hex);
+  }
+
+  async function init(){
+    let ev;
+    try{
+      const res = await fetch(`/api/events/${encodeURIComponent(slug)}`);
+      if(!res.ok){
+        showNotFound();
+        return;
+      }
+      ev = await res.json();
+    }catch(err){
+      showNotFound();
+      return;
+    }
+
+    currentEvent = ev;
+    applyTheme(ev.theme || '#C6962E');
+    document.getElementById('entry-title').textContent = ev.name;
+    document.getElementById('entry-welcome').textContent = ev.welcomeMessage || '';
+    document.getElementById('gal-title').textContent = ev.name;
+    document.getElementById('entry-bg').style.background =
+      ev.coverImageUrl ? `url(${ev.coverImageUrl}) center/cover` : `linear-gradient(135deg,#1B2440,#2C3C68)`;
+
+    if(ev.status !== 'live'){
+      document.getElementById('screen-entry').classList.add('hidden');
+      document.getElementById('screen-closed').classList.remove('hidden');
+      return;
+    }
+
+    // If this guest already entered a name for this event, skip straight to the gallery
+    const savedName = localStorage.getItem(`zuafoto_guest_${slug}`);
+    if(savedName){
+      enterGallery(savedName);
+    }
+  }
+
+  function showNotFound(){
+    document.getElementById('screen-entry').classList.add('hidden');
+    const closed = document.getElementById('screen-closed');
+    closed.classList.remove('hidden');
+    closed.querySelector('h2').textContent = 'Événement introuvable';
+    closed.querySelector('p').textContent = "Vérifie le lien ou le QR code — cet événement n'existe pas ou plus.";
+  }
+
+  document.getElementById('btn-enter-gallery').addEventListener('click', ()=>{
+    const name = document.getElementById('guest-name-input').value.trim();
+    if(!name){
+      document.getElementById('guest-name-input').focus();
+      return;
+    }
+    localStorage.setItem(`zuafoto_guest_${slug}`, name);
+    enterGallery(name);
+  });
+  document.getElementById('guest-name-input').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') document.getElementById('btn-enter-gallery').click();
+  });
+
+  function enterGallery(name){
+    document.getElementById('screen-entry').classList.add('hidden');
+    document.getElementById('screen-gallery').classList.remove('hidden');
+    document.getElementById('guest-chip-name').textContent = name;
+    loadGallery();
+  }
+
+  async function loadGallery(){
+    try{
+      const res = await fetch(`/api/gallery/${encodeURIComponent(slug)}`);
+      if(res.ok){
+        const data = await res.json();
+        allPhotos = data.photos || [];
+      }
+    }catch(err){ /* network hiccup — keep showing whatever we already had */ }
+    renderPhotoGrid();
+  }
+
+  // ================= GALLERY ================
+  function renderPhotoGrid(){
+    const filtered = currentFilter === 'Tous' ? allPhotos : allPhotos.filter(p => p.tag === currentFilter);
+    const grid = document.getElementById('photo-grid');
+    const empty = document.getElementById('gallery-empty');
+    document.getElementById('photo-count-label').textContent = `${filtered.length} photo${filtered.length>1?'s':''}`;
+
+    if(filtered.length === 0){
+      grid.classList.add('hidden'); empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden'); grid.classList.remove('hidden');
+
+    grid.innerHTML = filtered.map((p,i)=>`
+      <div class="photo-card">
+        <div class="photo-frame" style="background:${frameGradients[i % frameGradients.length]};">
+          ${p.url ? `<img src="${p.url}" alt="" style="width:100%;height:100%;object-fit:cover;">` : cameraSVG()}
+        </div>
+        <div class="photo-caption">
+          <div class="n">${p.name}</div>
+          <div class="t mono">${p.tag}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  document.querySelectorAll('.filter-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      currentFilter = chip.dataset.tag;
+      renderPhotoGrid();
+    });
+  });
+
+  document.getElementById('btn-refresh').addEventListener('click', async (e)=>{
+    const btn = e.currentTarget;
+    btn.classList.add('spinning');
+    await loadGallery();
+    btn.classList.remove('spinning');
+    toast('Galerie actualisée');
+  });
+
+  // ================= UPLOAD SHEET =================
+  document.getElementById('btn-open-upload').addEventListener('click', ()=>{
+    document.getElementById('upload-sheet-overlay').classList.remove('hidden');
+  });
+  document.getElementById('btn-cancel-upload').addEventListener('click', closeSheet);
+  function closeSheet(){
+    document.getElementById('upload-sheet-overlay').classList.add('hidden');
+    uploadedFile = null;
+    document.getElementById('upload-zone').classList.remove('has-preview');
+    document.getElementById('upload-zone').innerHTML = '📷 Touche pour prendre une photo ou en choisir une';
+    document.getElementById('btn-send-upload').disabled = true;
+  }
+
+  document.getElementById('photo-file-input').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    uploadedFile = file;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const zone = document.getElementById('upload-zone');
+      zone.classList.add('has-preview');
+      zone.innerHTML = `<img class="upload-preview" src="${reader.result}">`;
+      document.getElementById('btn-send-upload').disabled = false;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.querySelectorAll('.tag-option').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      document.querySelectorAll('.tag-option').forEach(o=>o.classList.remove('selected'));
+      opt.classList.add('selected');
+      selectedUploadTag = opt.dataset.tag;
+    });
+  });
+
+  document.getElementById('btn-send-upload').addEventListener('click', async ()=>{
+    if(!uploadedFile) return;
+    const sendBtn = document.getElementById('btn-send-upload');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Envoi…';
+
+    const guestName = localStorage.getItem(`zuafoto_guest_${slug}`) || 'Invité';
+
+    try{
+      const signRes = await fetch('/api/upload-sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, guestName, tag: selectedUploadTag }),
+      });
+      const signData = await signRes.json();
+
+      if(!signRes.ok){
+        toast(signData.error === 'event_closed' ? 'Cette galerie est fermée.' : 'Erreur — réessaie.');
+        return;
+      }
+
+      const form = new FormData();
+      form.append('file', uploadedFile);
+      form.append('api_key', signData.apiKey);
+      form.append('timestamp', signData.timestamp);
+      form.append('signature', signData.signature);
+      form.append('folder', signData.folder);
+      form.append('context', signData.context);
+
+      const uploadRes = await fetch(signData.uploadUrl, { method: 'POST', body: form });
+      if(!uploadRes.ok){
+        toast('Échec de l\'envoi — réessaie.');
+        return;
+      }
+
+      closeSheet();
+      toast('Photo envoyée — en attente de validation');
+    }catch(err){
+      toast('Impossible de contacter le serveur.');
+    }finally{
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Envoyer la photo';
+    }
+  });
+
+  init();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>zuafoto — La galerie photo de votre événement</title>
+<meta name="description" content="Zuafoto transforme chaque téléphone en appareil photo de la soirée. Vos invités scannent, partagent, et la galerie s'anime en temps réel.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10162A;
+    --surface:#1B2440;
+    --surface-2:#F5EFE1;
+    --surface-border: rgba(245,239,225,0.10);
+    --flash:#C6962E;
+    --flash-dim: rgba(198,150,46,0.16);
+    --gold:#D9AE5E;
+    --live:#C6962E;
+    --paper:#F5EFE1;
+    --muted: rgba(245,239,225,0.62);
+    --muted-2: rgba(245,239,225,0.4);
+    --ink-on-cream:#1B2136;
+    --muted-on-cream:#6B6F7D;
+    --cream-border: rgba(27,33,54,0.10);
+    --radius: 20px;
+    --radius-sm: 12px;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Plus Jakarta Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  .display{ font-family:'Fraunces', serif; }
+  .mono{ font-family:'JetBrains Mono', monospace; letter-spacing:0.02em; }
+
+  a{ color:inherit; }
+  img{ max-width:100%; display:block; }
+
+  :focus-visible{
+    outline: 2px solid var(--flash);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 28px; }
+
+  /* ---------- background texture ---------- */
+  .grain{
+    position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.5;
+    background-image: radial-gradient(circle at 15% 20%, rgba(198,150,46,0.09), transparent 40%),
+                       radial-gradient(circle at 85% 0%, rgba(44,60,104,0.35), transparent 45%),
+                       radial-gradient(circle at 50% 100%, rgba(198,150,46,0.06), transparent 40%);
+  }
+
+  /* ---------- nav ---------- */
+  header{
+    position:sticky; top:0; z-index:40;
+    background:rgba(16,22,42,0.78);
+    backdrop-filter: blur(14px);
+    border-bottom:1px solid var(--surface-border);
+  }
+  nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px; max-width:1180px; margin:0 auto;
+  }
+  .logo{
+    font-family:'Fraunces', serif; font-weight:500; font-size:22px;
+    text-decoration:none; letter-spacing:-0.01em;
+    display:flex; align-items:baseline; gap:0;
+  }
+  .logo .zua{ color:var(--paper); }
+  .logo .foto{ color:var(--flash); font-style:italic; }
+  .logo.on-cream .zua{ color:var(--ink-on-cream); }
+  .nav-links{ display:flex; align-items:center; gap:28px; }
+  .nav-links a{
+    font-size:14px; color:var(--muted); text-decoration:none; font-weight:500;
+    transition:color 0.2s;
+  }
+  .nav-links a:hover{ color:var(--paper); }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:12px 22px; border-radius:100px; font-weight:600; font-size:14.5px;
+    text-decoration:none; border:1px solid transparent; cursor:pointer;
+    transition:transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    white-space:nowrap;
+  }
+  .btn-flash{
+    background:var(--flash); color:#161022;
+    box-shadow:0 8px 24px -8px rgba(198,150,46,0.45);
+  }
+  .btn-flash:hover{ transform:translateY(-2px); box-shadow:0 12px 28px -8px rgba(198,150,46,0.6); }
+  .btn-ghost{
+    background:transparent; border-color:var(--surface-border); color:var(--paper);
+  }
+  .btn-ghost:hover{ background:var(--surface); border-color:rgba(246,241,231,0.2); }
+  .btn-admin{
+    font-size:13px; padding:9px 16px; color:var(--muted);
+    border:1px solid var(--surface-border);
+  }
+  .btn-admin:hover{ color:var(--paper); border-color:rgba(246,241,231,0.25); }
+
+  .nav-cta{ display:flex; align-items:center; gap:10px; }
+  .nav-toggle{ display:none; background:none; border:none; color:var(--paper); font-size:24px; cursor:pointer; }
+
+  @media (max-width: 760px){
+    .nav-links{ display:none; }
+    .nav-toggle{ display:block; }
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative; z-index:1;
+    padding:76px 0 40px;
+  }
+  .hero-grid{
+    display:grid; grid-template-columns: 1.05fr 0.95fr; gap:56px; align-items:center;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:13px; font-weight:600; color:var(--gold); text-transform:uppercase; letter-spacing:0.09em;
+    margin-bottom:20px;
+  }
+  .eyebrow::before{
+    content:''; width:6px; height:6px; border-radius:50%; background:var(--gold);
+  }
+  h1{
+    font-size:clamp(38px, 5vw, 60px); line-height:1.04; font-weight:500;
+    margin:0 0 22px; letter-spacing:-0.015em;
+  }
+  h1 em{ font-style:italic; color:var(--flash); font-weight:500; }
+  .hero p.lede{
+    font-size:18px; line-height:1.6; color:var(--muted); max-width:480px; margin:0 0 34px;
+  }
+  .hero-actions{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:28px; }
+  .hero-note{
+    font-size:13.5px; color:var(--muted-2); display:flex; align-items:center; gap:10px;
+  }
+  .hero-note .arrow{ color:var(--gold); }
+
+  /* ---------- live wall (signature element) ---------- */
+  .wall{
+    position:relative; height:520px;
+  }
+  .polaroid{
+    position:absolute; width:168px;
+    background:var(--surface); border:1px solid var(--surface-border);
+    border-radius:10px; padding:8px 8px 14px; box-shadow:0 20px 40px -18px rgba(0,0,0,0.6);
+    animation: arrive 9s ease-in-out infinite;
+  }
+  .polaroid .frame{
+    width:100%; aspect-ratio:1/1.05; border-radius:6px; margin-bottom:10px;
+    display:flex; align-items:center; justify-content:center;
+    position:relative; overflow:hidden;
+  }
+  .polaroid .frame svg{ width:38%; height:38%; opacity:0.85; }
+  .polaroid .cap{ display:flex; align-items:center; justify-content:space-between; }
+  .polaroid .name{ font-size:12.5px; font-weight:600; }
+  .polaroid .tag{
+    font-size:9.5px; padding:3px 7px; border-radius:100px; font-family:'JetBrains Mono',monospace;
+    background:rgba(246,241,231,0.08); color:var(--muted);
+  }
+
+  .p1{ top:6%; left:6%; transform:rotate(-7deg); animation-delay:0s; }
+  .p2{ top:2%; left:44%; transform:rotate(5deg); width:150px; animation-delay:1.2s; }
+  .p3{ top:34%; left:0%; transform:rotate(4deg); width:145px; animation-delay:2.6s; }
+  .p4{ top:30%; left:52%; transform:rotate(-4deg); animation-delay:0.6s; }
+  .p5{ top:60%; left:20%; transform:rotate(-3deg); width:155px; animation-delay:3.4s; }
+  .p6{ top:64%; left:56%; transform:rotate(6deg); width:140px; animation-delay:1.9s; }
+
+  @keyframes arrive{
+    0%{ opacity:0; transform: translateY(18px) scale(0.94) rotate(var(--r,0deg)); }
+    8%{ opacity:1; transform: translateY(0) scale(1) rotate(var(--r,0deg)); }
+    92%{ opacity:1; }
+    100%{ opacity:0.85; }
+  }
+
+  .live-badge{
+    position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+    display:flex; align-items:center; gap:9px;
+    background:rgba(20,27,46,0.92); border:1px solid var(--surface-border);
+    padding:10px 18px; border-radius:100px; backdrop-filter:blur(8px);
+    font-size:13px; font-weight:600; white-space:nowrap;
+  }
+  .pulse{
+    width:8px; height:8px; border-radius:50%; background:var(--live);
+    box-shadow:0 0 0 0 rgba(198,150,46,0.6);
+    animation: pulse 1.8s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(198,150,46,0.5); }
+    70%{ box-shadow:0 0 0 9px rgba(198,150,46,0); }
+    100%{ box-shadow:0 0 0 0 rgba(198,150,46,0); }
+  }
+
+  @media (max-width:940px){
+    .hero-grid{ grid-template-columns:1fr; }
+    .wall{ height:400px; margin-top:10px; }
+    .hero p.lede{ max-width:100%; }
+  }
+  @media (max-width:520px){
+    .wall{ height:340px; }
+    .polaroid{ width:128px; }
+    .p2,.p3,.p5,.p6{ width:112px; }
+  }
+
+  /* ---------- how it works ---------- */
+  section{ position:relative; z-index:1; padding:100px 0; }
+  .section-head{ max-width:560px; margin-bottom:56px; }
+  .section-eyebrow{
+    font-size:13px; font-weight:600; color:var(--flash); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:14px;
+  }
+  h2{ font-size:clamp(28px,3.4vw,40px); font-weight:500; margin:0 0 14px; letter-spacing:-0.01em; }
+  .section-head p{ color:var(--muted); font-size:16.5px; line-height:1.6; margin:0; }
+
+  .steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  .step{
+    background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--radius);
+    padding:32px 28px;
+  }
+  .step-num{
+    font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--gold);
+    margin-bottom:22px; display:block;
+  }
+  .step h3{ font-size:20px; font-weight:600; margin:0 0 12px; }
+  .step p{ color:var(--muted); font-size:15px; line-height:1.6; margin:0 0 18px; }
+  .step-meta{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted-2);
+    border-top:1px solid var(--surface-border); padding-top:14px;
+  }
+
+  @media (max-width:900px){ .steps{ grid-template-columns:1fr; } }
+
+  /* ---------- features ---------- */
+  .features{ background:var(--surface-2); }
+  .features .section-eyebrow{ color:#A67C2A; }
+  .features h2, .features .section-head p{ color:var(--ink-on-cream); }
+  .features .section-head p{ color:var(--muted-on-cream); }
+  .feature-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:2px; background:var(--cream-border); border-radius:var(--radius); overflow:hidden; }
+  .feature{ background:#FBF7EF; padding:34px 28px; }
+  .feature-icon{
+    width:40px; height:40px; border-radius:10px; background:rgba(198,150,46,0.12); border:1px solid rgba(198,150,46,0.3);
+    display:flex; align-items:center; justify-content:center; margin-bottom:18px;
+  }
+  .feature-icon svg{ width:19px; height:19px; }
+  .feature h3{ font-size:16.5px; font-weight:600; margin:0 0 8px; color:var(--ink-on-cream); }
+  .feature p{ font-size:14px; color:var(--muted-on-cream); line-height:1.6; margin:0; }
+
+  @media (max-width:900px){ .feature-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:600px){ .feature-grid{ grid-template-columns:1fr; } }
+
+  /* ---------- organizer band ---------- */
+  .organizer{
+    display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center;
+  }
+  .organizer-copy .section-eyebrow{ color:var(--gold); }
+  .org-list{ list-style:none; padding:0; margin:26px 0 32px; display:flex; flex-direction:column; gap:16px; }
+  .org-list li{ display:flex; gap:14px; font-size:15px; color:var(--paper); align-items:flex-start; }
+  .org-list .check{
+    width:20px; height:20px; border-radius:6px; background:var(--flash-dim); color:var(--flash);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; font-size:12px; font-weight:700;
+  }
+  .org-list span.copy b{ display:block; margin-bottom:2px; }
+  .org-list span.copy small{ color:var(--muted); font-weight:400; }
+
+  .mock-dash{
+    background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--radius);
+    padding:22px; box-shadow:0 30px 60px -30px rgba(0,0,0,0.7);
+  }
+  .mock-dash .mock-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .mock-dash .mock-title{ font-family:'Fraunces',serif; font-size:17px; }
+  .mock-pill{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; background:rgba(198,150,46,0.12); color:var(--live);
+    padding:4px 10px; border-radius:100px; border:1px solid rgba(198,150,46,0.25);
+  }
+  .mock-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
+  .mock-stat{ background:var(--ink); border:1px solid var(--surface-border); border-radius:10px; padding:14px 12px; }
+  .mock-stat b{ display:block; font-family:'Fraunces',serif; font-size:22px; font-weight:500; }
+  .mock-stat span{ font-size:11.5px; color:var(--muted-2); }
+  .mock-row{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--ink); border:1px solid var(--surface-border); border-radius:10px;
+    padding:12px 14px; margin-bottom:8px; font-size:13px;
+  }
+  .mock-row .who{ display:flex; align-items:center; gap:10px; }
+  .mock-avatar{ width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--flash),var(--gold)); flex-shrink:0; }
+  .mock-approve{ font-size:11.5px; color:var(--live); font-family:'JetBrains Mono',monospace; }
+
+  @media (max-width:900px){ .organizer{ grid-template-columns:1fr; } }
+
+  /* ---------- final cta ---------- */
+  .final-cta{
+    text-align:center; padding-top:110px; padding-bottom:130px;
+  }
+  .final-cta h2{ max-width:640px; margin:0 auto 16px; }
+  .final-cta p{ color:var(--muted); max-width:480px; margin:0 auto 34px; font-size:16.5px; }
+  .final-actions{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+
+  /* ---------- footer ---------- */
+  footer{
+    border-top:1px solid var(--surface-border); padding:44px 0; position:relative; z-index:1;
+  }
+  .footer-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+  .footer-links{ display:flex; gap:26px; flex-wrap:wrap; }
+  .footer-links a{ font-size:13.5px; color:var(--muted); text-decoration:none; }
+  .footer-links a:hover{ color:var(--paper); }
+  .footer-copy{ font-size:12.5px; color:var(--muted-2); }
+
+  @media (prefers-reduced-motion: reduce){
+    .polaroid, .pulse{ animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header>
+  <nav>
+    <a href="#top" class="logo"><span class="zua">zua</span><span class="foto">foto</span></a>
+    <div class="nav-links">
+      <a href="#comment-ca-marche">Comment ça marche</a>
+      <a href="#fonctionnalites">Fonctionnalités</a>
+      <a href="#organisateurs">Organisateurs</a>
+    </div>
+    <div class="nav-cta">
+      <a href="/admin" class="btn btn-admin">Connexion organisateur</a>
+      <a href="#rejoindre" class="btn btn-flash">Rejoindre un événement</a>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">Galerie photo événementielle · en direct</span>
+        <h1 class="display">Chaque invité prend la photo.<br>Une seule galerie <em>s'anime</em>.</h1>
+        <p class="lede">Zuafoto transforme chaque téléphone en appareil photo de la soirée. Vos invités scannent, partagent une photo, et la galerie de l'événement s'anime en temps réel — sans application, sans compte à créer.</p>
+        <div class="hero-actions">
+          <a href="#rejoindre" class="btn btn-flash">Rejoindre un événement</a>
+          <a href="/admin" class="btn btn-ghost">Connexion organisateur →</a>
+        </div>
+        <div class="hero-note"><span class="arrow">↳</span> Scanne un QR code à l'entrée, entre ton prénom, tu es dans la galerie en moins de 20 secondes.</div>
+      </div>
+
+      <div class="wall" aria-hidden="true">
+        <div class="polaroid p1">
+          <div class="frame" style="background:linear-gradient(135deg,#1B2440,#2C3C68);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F6F1E7"><path d="M4 7h3l2-3h6l2 3h3v12H4z" stroke-width="1.4"/><circle cx="12" cy="13" r="3.5" stroke-width="1.4"/></svg>
+          </div>
+          <div class="cap"><span class="name">Sophie M.</span><span class="tag mono">Réception</span></div>
+        </div>
+        <div class="polaroid p2">
+          <div class="frame" style="background:linear-gradient(135deg,#172140,#233158);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F6F1E7"><path d="M4 7h3l2-3h6l2 3h3v12H4z" stroke-width="1.4"/><circle cx="12" cy="13" r="3.5" stroke-width="1.4"/></svg>
+          </div>
+          <div class="cap"><span class="name">David K.</span><span class="tag mono">Cérémonie</span></div>
+        </div>
+        <div class="polaroid p3">
+          <div class="frame" style="background:linear-gradient(135deg,#241d10,#4a3b18);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F6F1E7"><path d="M4 7h3l2-3h6l2 3h3v12H4z" stroke-width="1.4"/><circle cx="12" cy="13" r="3.5" stroke-width="1.4"/></svg>
+          </div>
+          <div class="cap"><span class="name">Aïcha B.</span><span class="tag mono">Spontané</span></div>
+        </div>
+        <div class="polaroid p4">
+          <div class="frame" style="background:linear-gradient(135deg,#1e2445,#2f3a68);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F6F1E7"><path d="M4 7h3l2-3h6l2 3h3v12H4z" stroke-width="1.4"/><circle cx="12" cy="13" r="3.5" stroke-width="1.4"/></svg>
+          </div>
+          <div class="cap"><span class="name">Marc L.</span><span class="tag mono">Piste</span></div>
+        </div>
+        <div class="polaroid p5">
+          <div class="frame" style="background:linear-gradient(135deg,#172438,#22344f);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F6F1E7"><path d="M4 7h3l2-3h6l2 3h3v12H4z" stroke-width="1.4"/><circle cx="12" cy="13" r="3.5" stroke-width="1.4"/></svg>
+          </div>
+          <div class="cap"><span class="name">Nadia T.</span><span class="tag mono">Réception</span></div>
+        </div>
+        <div class="polaroid p6">
+          <div class="frame" style="background:linear-gradient(135deg,#241a12,#4a2f18);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F6F1E7"><path d="M4 7h3l2-3h6l2 3h3v12H4z" stroke-width="1.4"/><circle cx="12" cy="13" r="3.5" stroke-width="1.4"/></svg>
+          </div>
+          <div class="cap"><span class="name">Junior M.</span><span class="tag mono">Spontané</span></div>
+        </div>
+        <div class="live-badge"><span class="pulse"></span> 6 photos ajoutées à l'instant</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="comment-ca-marche">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">Comment ça marche</span>
+        <h2 class="display">Simple. Instantané. Magique.</h2>
+        <p>Trois étapes, moins d'une minute, aucune app à télécharger.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <h3>Scanne le QR code à l'entrée</h3>
+          <p>Pointe simplement ton téléphone vers le QR code affiché à l'entrée — la galerie de l'événement s'ouvre directement dans ton navigateur, sans rien installer.</p>
+          <div class="step-meta">TON TÉLÉPHONE · ZÉRO INSTALLATION</div>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <h3>Entre ton prénom</h3>
+          <p>La page de l'événement s'ouvre avec son thème et sa photo de couverture. Tu entres ton prénom, et tu fais déjà partie de la galerie.</p>
+          <div class="step-meta">TON PRÉNOM · ACCÈS IMMÉDIAT</div>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <h3>Prends une photo, regarde-la apparaître</h3>
+          <p>Prends une photo ou importe-en une de ta galerie, ajoute une étiquette — elle apparaît pour tous les invités dès qu'elle est validée.</p>
+          <div class="step-meta">APPAREIL PHOTO · GALERIE EN DIRECT</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="fonctionnalites">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">Fonctionnalités</span>
+        <h2 class="display">Zéro friction. 100% souvenir.</h2>
+        <p>Pensé pour des invités sur leur téléphone, un soir de fête — pas pour des développeurs.</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#C6962E" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 4v16M16 4v16M4 8h16M4 16h16"/></svg></div>
+          <h3>Aucune app à installer</h3>
+          <p>Ton navigateur suffit. Scanne, entre ton prénom, tu es dans la galerie en moins de 20 secondes.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#C6962E" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>
+          <h3>Photos en temps réel</h3>
+          <p>Dès qu'une photo est validée, elle apparaît instantanément pour tous les invités. La galerie grandit en direct.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#C6962E" stroke-width="1.6"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-0.5z"/></svg></div>
+          <h3>Aux couleurs de l'événement</h3>
+          <p>Chaque galerie a son propre thème et sa photo de couverture — une ambiance unique pour chaque célébration.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#C6962E" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4M3 17l9 4 9-4" opacity="0.5"/></svg></div>
+          <h3>Tague tes moments</h3>
+          <p>Cérémonie, réception, piste de danse, spontané — les photos sont classées pour être faciles à retrouver.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#C6962E" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></div>
+          <h3>Toujours consultable</h3>
+          <p>La galerie reste ouverte pendant toute la durée définie par l'organisateur. Reviens quand tu veux revivre la soirée.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#C6962E" stroke-width="1.6"><circle cx="8" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2 20c0-3 2.5-5 6-5s6 2 6 5M13 20c0-2.5 2-4.5 4.5-4.5s4.5 2 4.5 4.5"/></svg></div>
+          <h3>Partagée par tous</h3>
+          <p>Chaque invité contribue. Tu vois les photos de tout le monde — une galerie collective, pas juste la tienne.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="organisateurs">
+    <div class="wrap organizer">
+      <div class="organizer-copy">
+        <span class="section-eyebrow">Pour les organisateurs</span>
+        <h2 class="display">Tu gardes le contrôle. Tes invités vivent l'instant.</h2>
+        <ul class="org-list">
+          <li><span class="check">✓</span><span class="copy"><b>Tu valides chaque photo</b><small>Rien ne s'affiche dans la galerie publique sans ton approbation.</small></span></li>
+          <li><span class="check">✓</span><span class="copy"><b>QR code généré automatiquement</b><small>Crée l'événement, télécharge ou imprime le QR, c'est prêt pour l'entrée.</small></span></li>
+          <li><span class="check">✓</span><span class="copy"><b>Thème et couverture personnalisés</b><small>Chaque événement a sa propre identité visuelle.</small></span></li>
+          <li><span class="check">✓</span><span class="copy"><b>Expiration automatique</b><small>Définis une date de fin — la galerie se ferme toute seule.</small></span></li>
+        </ul>
+        <a href="/admin" class="btn btn-flash">Connexion organisateur →</a>
+        <p style="margin-top:14px; font-size:13.5px; color:var(--muted-2);">Vous organisez un événement ? <a href="#" style="color:var(--gold); text-decoration:underline;">Contactez-nous</a> pour recevoir vos identifiants.</p>
+      </div>
+      <div class="mock-dash" aria-hidden="true">
+        <div class="mock-head">
+          <span class="mock-title display">Mariage — Clara &amp; Junior</span>
+          <span class="mock-pill">● en direct</span>
+        </div>
+        <div class="mock-stats">
+          <div class="mock-stat"><b>142</b><span>photos reçues</span></div>
+          <div class="mock-stat"><b>98</b><span>publiées</span></div>
+          <div class="mock-stat"><b>76</b><span>invités connectés</span></div>
+        </div>
+        <div class="mock-row"><div class="who"><span class="mock-avatar"></span>Sophie M. · Réception</div><span class="mock-approve">✓ publiée</span></div>
+        <div class="mock-row"><div class="who"><span class="mock-avatar"></span>David K. · Cérémonie</div><span class="mock-approve">✓ publiée</span></div>
+        <div class="mock-row"><div class="who"><span class="mock-avatar"></span>Aïcha B. · Spontané</div><span class="mock-approve" style="color:var(--gold);">en attente</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="final-cta" id="rejoindre">
+    <div class="wrap">
+      <span class="section-eyebrow">Tu es attendu(e)</span>
+      <h2 class="display">Scanne le QR code à l'entrée<br>et rejoins la galerie en quelques secondes.</h2>
+      <p>Si tu n'as pas encore de code d'événement, demande-le à l'organisateur ou repère le QR affiché sur place.</p>
+      <div class="final-actions">
+        <button class="btn btn-flash" onclick="alert('Ouvre le scanner QR — écran à connecter à la galerie de l\'événement.')">Scanner un QR code</button>
+        <a href="/admin" class="btn btn-ghost">Espace organisateur</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer-row">
+    <a href="#top" class="logo"><span class="zua">zua</span><span class="foto">foto</span></a>
+    <div class="footer-links">
+      <a href="#">Politique de confidentialité</a>
+      <a href="#">Conditions d'utilisation</a>
+      <a href="#">Nous contacter</a>
+      <a href="/admin">Espace organisateur</a>
+    </div>
+    <span class="footer-copy">© 2026 zuafoto · Tous droits réservés</span>
+  </div>
+</footer>
+
+<script>
+  // Placeholder: this hero photo wall is illustrative. Once the Worker API is wired up,
+  // swap this block to poll GET /gallery/:slug and render real approved photos with
+  // the same .polaroid markup + arrive animation.
+</script>
+
+</body>
+</html>

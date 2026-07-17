@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>zuafoto — Espace organisateur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --ink:#10162A;
+    --surface:#1B2440;
+    --surface-2:#F5EFE1;
+    --surface-border: rgba(245,239,225,0.10);
+    --flash:#C6962E;
+    --flash-dim: rgba(198,150,46,0.16);
+    --gold:#D9AE5E;
+    --live:#C6962E;
+    --paper:#F5EFE1;
+    --muted: rgba(245,239,225,0.62);
+    --muted-2: rgba(245,239,225,0.4);
+    --ink-on-cream:#1B2136;
+    --muted-on-cream:#6B6F7D;
+    --muted-on-cream-2:#9497A2;
+    --cream-border: rgba(27,33,54,0.10);
+    --cream-border-2: rgba(27,33,54,0.16);
+    --danger:#B3543F;
+    --radius:18px;
+    --radius-sm:11px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--surface-2); color:var(--ink-on-cream);
+    font-family:'Plus Jakarta Sans', sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  .display{ font-family:'Fraunces', serif; }
+  .mono{ font-family:'JetBrains Mono', monospace; letter-spacing:0.02em; }
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:inherit; }
+  :focus-visible{ outline:2px solid var(--flash); outline-offset:2px; border-radius:4px; }
+  .hidden{ display:none !important; }
+
+  /* ---------- shared buttons ---------- */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:11px 20px; border-radius:100px; font-weight:600; font-size:14px;
+    border:1px solid transparent; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    white-space:nowrap;
+  }
+  .btn-gold{ background:var(--flash); color:#FBF7EF; box-shadow:0 8px 20px -8px rgba(198,150,46,0.5); }
+  .btn-gold:hover{ transform:translateY(-1px); box-shadow:0 10px 22px -8px rgba(198,150,46,0.65); }
+  .btn-navy{ background:var(--ink); color:var(--paper); }
+  .btn-navy:hover{ background:#1B2440; }
+  .btn-ghost{ background:transparent; border-color:var(--cream-border-2); color:var(--ink-on-cream); }
+  .btn-ghost:hover{ background:rgba(27,33,54,0.05); }
+  .btn-danger-ghost{ background:transparent; border-color:rgba(179,84,63,0.35); color:var(--danger); }
+  .btn-danger-ghost:hover{ background:rgba(179,84,63,0.08); }
+  .btn-sm{ padding:8px 14px; font-size:13px; }
+  .btn:disabled{ opacity:0.45; cursor:not-allowed; transform:none !important; }
+
+  input[type=text], input[type=email], input[type=password], input[type=date], input[type=tel], textarea, select{
+    width:100%; padding:11px 14px; border-radius:var(--radius-sm); border:1px solid var(--cream-border-2);
+    background:#FBF7EF; color:var(--ink-on-cream); font-family:inherit; font-size:14.5px;
+  }
+  textarea{ resize:vertical; min-height:80px; }
+  label.field-label{ font-size:13px; font-weight:600; color:var(--ink-on-cream); margin-bottom:7px; display:block; }
+  .field{ margin-bottom:18px; }
+  .field-hint{ font-size:12.5px; color:var(--muted-on-cream-2); margin-top:6px; }
+
+  /* ================= LOGIN VIEW ================= */
+  .login-view{
+    min-height:100vh; background:var(--ink);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+    background-image: radial-gradient(circle at 20% 20%, rgba(198,150,46,0.10), transparent 45%),
+                       radial-gradient(circle at 85% 80%, rgba(44,60,104,0.4), transparent 50%);
+  }
+  .login-card{
+    width:100%; max-width:400px; background:#FBF7EF; border-radius:24px; padding:44px 38px;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,0.6);
+  }
+  .login-logo{ text-align:center; margin-bottom:6px; font-size:26px; }
+  .login-logo .zua{ color:var(--ink-on-cream); }
+  .login-logo .foto{ color:var(--flash); font-style:italic; }
+  .login-eyebrow{
+    text-align:center; font-size:12px; letter-spacing:0.09em; text-transform:uppercase;
+    color:var(--muted-on-cream); margin-bottom:28px;
+  }
+  .login-check{ display:flex; align-items:center; gap:9px; font-size:13.5px; color:var(--muted-on-cream); margin:6px 0 22px; }
+  .login-check input{ width:16px; height:16px; accent-color:var(--flash); }
+  .pin-step{ margin-top:6px; }
+  .pin-inputs{ display:flex; gap:10px; margin-bottom:22px; }
+  .pin-inputs input{
+    text-align:center; font-size:20px; font-family:'JetBrains Mono',monospace; padding:12px 0;
+  }
+  .login-back{ font-size:13px; color:var(--muted-on-cream); cursor:pointer; margin-top:16px; display:inline-block; }
+  .login-back:hover{ color:var(--ink-on-cream); }
+
+  /* ================= DASHBOARD SHELL ================= */
+  .shell{ display:flex; min-height:100vh; }
+  .sidebar{
+    width:236px; flex-shrink:0; background:var(--ink); color:var(--paper);
+    display:flex; flex-direction:column; padding:26px 18px; position:sticky; top:0; height:100vh;
+  }
+  .sidebar-logo{ font-size:21px; padding:0 8px 30px; }
+  .sidebar-logo .zua{ color:var(--paper); }
+  .sidebar-logo .foto{ color:var(--flash); font-style:italic; }
+  .sidebar-nav{ display:flex; flex-direction:column; gap:3px; flex:1; }
+  .sidebar-link{
+    display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:10px;
+    font-size:14px; font-weight:500; color:var(--muted); cursor:pointer; transition:background .15s, color .15s;
+  }
+  .sidebar-link svg{ width:17px; height:17px; flex-shrink:0; opacity:0.85; }
+  .sidebar-link:hover{ background:rgba(245,239,225,0.06); color:var(--paper); }
+  .sidebar-link.active{ background:rgba(198,150,46,0.14); color:var(--flash); }
+  .sidebar-link.active svg{ opacity:1; }
+  .sidebar-foot{ border-top:1px solid rgba(245,239,225,0.1); padding-top:14px; margin-top:10px; }
+
+  .content{ flex:1; padding:38px 46px; max-width:1180px; }
+  .content-head{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:30px; gap:20px; flex-wrap:wrap; }
+  .content-head h1{ font-size:29px; font-weight:500; margin:0 0 6px; letter-spacing:-0.01em; }
+  .content-head p{ margin:0; color:var(--muted-on-cream); font-size:14.5px; }
+  .breadcrumb{ font-size:13px; color:var(--muted-on-cream); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+  .breadcrumb .back-link{ cursor:pointer; font-weight:600; color:var(--ink-on-cream); }
+  .breadcrumb .back-link:hover{ color:var(--flash); }
+
+  /* stats */
+  .stats-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:34px; }
+  .stat-card{ background:#FBF7EF; border:1px solid var(--cream-border); border-radius:var(--radius); padding:20px 22px; }
+  .stat-card b{ display:block; font-family:'Fraunces',serif; font-size:30px; font-weight:500; margin-bottom:4px; }
+  .stat-card span{ font-size:12.5px; color:var(--muted-on-cream); }
+  @media (max-width:900px){ .stats-row{ grid-template-columns:1fr 1fr; } }
+
+  /* events grid */
+  .events-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:18px; }
+  .event-card{
+    background:#FBF7EF; border:1px solid var(--cream-border); border-radius:var(--radius); overflow:hidden;
+    cursor:pointer; transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .event-card:hover{ transform:translateY(-3px); box-shadow:0 16px 30px -18px rgba(27,33,54,0.35); }
+  .event-cover{ height:110px; position:relative; }
+  .event-badge{
+    position:absolute; top:12px; left:12px; font-size:10.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.04em; padding:4px 10px; border-radius:100px; font-family:'JetBrains Mono',monospace;
+  }
+  .badge-live{ background:rgba(198,150,46,0.9); color:#fff; }
+  .badge-draft{ background:rgba(27,33,54,0.7); color:#fff; }
+  .badge-expired{ background:rgba(107,111,125,0.75); color:#fff; }
+  .event-body{ padding:16px 18px 18px; }
+  .event-body h3{ font-size:16.5px; font-weight:600; margin:0 0 5px; }
+  .event-meta{ font-size:12.5px; color:var(--muted-on-cream); margin-bottom:12px; }
+  .event-stats-mini{ display:flex; gap:14px; font-size:12px; color:var(--muted-on-cream-2); }
+  .event-stats-mini b{ color:var(--ink-on-cream); font-weight:700; }
+
+  .empty-state{
+    text-align:center; padding:70px 20px; border:1.5px dashed var(--cream-border-2); border-radius:var(--radius);
+  }
+  .empty-state h3{ font-size:18px; margin:14px 0 6px; }
+  .empty-state p{ color:var(--muted-on-cream); font-size:14px; margin:0 0 20px; }
+
+  /* ---------- create event form ---------- */
+  .form-card{ background:#FBF7EF; border:1px solid var(--cream-border); border-radius:var(--radius); padding:32px; max-width:640px; }
+  .form-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:640px){ .form-grid-2{ grid-template-columns:1fr; } }
+
+  .cover-upload{
+    border:1.5px dashed var(--cream-border-2); border-radius:var(--radius-sm); padding:26px; text-align:center;
+    cursor:pointer; color:var(--muted-on-cream); font-size:13.5px; transition:border-color .15s;
+  }
+  .cover-upload:hover{ border-color:var(--flash); color:var(--ink-on-cream); }
+  .cover-preview{ width:100%; height:120px; border-radius:var(--radius-sm); object-fit:cover; margin-bottom:10px; display:none; }
+
+  .theme-swatches{ display:flex; gap:10px; }
+  .swatch{
+    width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent;
+    transition:transform .15s ease, border-color .15s;
+  }
+  .swatch:hover{ transform:scale(1.08); }
+  .swatch.selected{ border-color:var(--ink-on-cream); }
+
+  .form-actions{ display:flex; gap:12px; margin-top:8px; }
+
+  /* qr result panel */
+  .qr-panel{
+    background:#FBF7EF; border:1px solid var(--cream-border); border-radius:var(--radius); padding:32px;
+    max-width:400px; text-align:center;
+  }
+  .qr-panel h3{ font-size:18px; margin:14px 0 4px; }
+  .qr-panel p{ font-size:13.5px; color:var(--muted-on-cream); margin:0 0 22px; }
+  #qrcode-box{ display:flex; justify-content:center; margin-bottom:20px; padding:16px; background:#fff; border-radius:12px; }
+  .qr-url{
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; background:var(--ink); color:var(--paper);
+    padding:10px 14px; border-radius:8px; margin-bottom:16px; word-break:break-all;
+  }
+  .qr-actions{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+  /* ---------- event detail tabs ---------- */
+  .detail-tabs{ display:flex; gap:6px; margin-bottom:26px; border-bottom:1px solid var(--cream-border); }
+  .detail-tab{
+    padding:11px 4px; margin-right:22px; font-size:14.5px; font-weight:600; color:var(--muted-on-cream);
+    cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .detail-tab.active{ color:var(--ink-on-cream); border-color:var(--flash); }
+
+  /* galerie moderation */
+  .mod-toolbar{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:12px;
+  }
+  .mod-toolbar-left{ display:flex; align-items:center; gap:14px; }
+  .mod-count{ font-size:13.5px; color:var(--muted-on-cream); }
+  .mod-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  .sub-tabs{ display:flex; gap:8px; margin-bottom:18px; }
+  .sub-tab{
+    padding:7px 16px; border-radius:100px; font-size:13px; font-weight:600; cursor:pointer;
+    border:1px solid var(--cream-border-2); color:var(--muted-on-cream);
+  }
+  .sub-tab.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
+  .photo-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:16px; }
+  .photo-card{
+    background:#FBF7EF; border:1px solid var(--cream-border); border-radius:14px; overflow:hidden; position:relative;
+  }
+  .photo-frame{
+    aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .photo-frame svg{ width:34%; height:34%; opacity:0.85; }
+  .photo-check{
+    position:absolute; top:10px; left:10px; width:20px; height:20px; border-radius:6px;
+    background:rgba(251,247,239,0.9); border:1.5px solid rgba(27,33,54,0.25); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--ink-on-cream); font-weight:700;
+  }
+  .photo-check.checked{ background:var(--flash); border-color:var(--flash); color:#fff; }
+  .photo-info{ padding:10px 12px 12px; }
+  .photo-name{ font-size:13px; font-weight:600; margin-bottom:2px; }
+  .photo-tag{ font-size:10.5px; color:var(--muted-on-cream); font-family:'JetBrains Mono',monospace; margin-bottom:10px; }
+  .photo-buttons{ display:flex; gap:6px; }
+  .photo-buttons .btn{ flex:1; padding:7px 8px; font-size:12px; }
+
+  /* réglages */
+  .settings-card{ background:#FBF7EF; border:1px solid var(--cream-border); border-radius:var(--radius); padding:28px; max-width:560px; margin-bottom:20px; }
+  .settings-card h3{ font-size:16px; margin:0 0 4px; }
+  .settings-card > p.desc{ font-size:13px; color:var(--muted-on-cream); margin:0 0 20px; }
+  .radio-row{ display:flex; align-items:flex-start; gap:10px; padding:12px 0; border-bottom:1px solid var(--cream-border); cursor:pointer; }
+  .radio-row:last-child{ border-bottom:none; }
+  .radio-row input{ margin-top:3px; width:16px; height:16px; accent-color:var(--flash); flex-shrink:0; }
+  .radio-row .rr-title{ font-size:14px; font-weight:600; }
+  .radio-row .rr-sub{ font-size:12.5px; color:var(--muted-on-cream); margin-top:2px; }
+
+  .toast{
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0;
+    background:var(--ink); color:var(--paper); padding:13px 22px; border-radius:100px; font-size:13.5px; font-weight:600;
+    box-shadow:0 20px 40px -14px rgba(0,0,0,0.5); transition:all .25s ease; z-index:200; pointer-events:none;
+    display:flex; align-items:center; gap:8px;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast .dot{ width:7px; height:7px; border-radius:50%; background:var(--flash); }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN VIEW ================= -->
+<div id="view-login" class="login-view">
+  <div class="login-card">
+    <div class="login-logo display"><span class="zua">zua</span><span class="foto">foto</span></div>
+    <div class="login-eyebrow">Espace organisateur</div>
+
+    <form id="form-login-step1">
+      <div class="field">
+        <label class="field-label">Adresse e-mail</label>
+        <input type="email" required placeholder="vous@exemple.com" id="login-email">
+      </div>
+      <div class="field">
+        <label class="field-label">Mot de passe</label>
+        <input type="password" required placeholder="••••••••" id="login-password">
+      </div>
+      <p id="login-error" class="hidden" style="color:var(--danger); font-size:13px; margin:-8px 0 16px;">E-mail ou mot de passe incorrect.</p>
+      <label class="login-check"><input type="checkbox" checked id="login-trust"> Faire confiance à cet appareil pendant 30 jours</label>
+      <button type="submit" class="btn btn-navy" id="login-submit-btn" style="width:100%;">Se connecter →</button>
+      <p class="field-hint" style="text-align:center; margin-top:18px;">Accès réservé aux organisateurs. Pas encore de compte ? Contactez zuafoto.</p>
+    </form>
+  </div>
+</div>
+
+<!-- ================= DASHBOARD SHELL ================= -->
+<div id="view-dashboard" class="shell hidden">
+  <aside class="sidebar">
+    <div class="sidebar-logo display"><span class="zua">zua</span><span class="foto">foto</span></div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-link active" data-nav="events">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg>
+        Événements
+      </div>
+      <div class="sidebar-link" data-nav="account">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
+        Compte
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="sidebar-link" id="btn-logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Quitter
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- ---------- EVENTS LIST ---------- -->
+    <section id="sub-events">
+      <div class="content-head">
+        <div>
+          <h1 class="display">Tes événements</h1>
+          <p>Gère tes galeries en direct et passées, modère les photos et génère les QR codes.</p>
+        </div>
+        <button class="btn btn-gold" id="btn-new-event">+ Créer un nouvel événement</button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><b id="stat-events">0</b><span>Événements</span></div>
+        <div class="stat-card"><b id="stat-photos">0</b><span>Photos capturées</span></div>
+        <div class="stat-card"><b id="stat-active">0</b><span>Galeries actives</span></div>
+        <div class="stat-card"><b id="stat-guests">0</b><span>Invités connectés</span></div>
+      </div>
+
+      <div id="events-empty" class="empty-state">
+        <div class="display" style="font-size:36px;">✦</div>
+        <h3 class="display">Aucun événement pour l'instant</h3>
+        <p>Crée ton premier événement pour générer un QR code et lancer la galerie.</p>
+        <button class="btn btn-gold" id="btn-new-event-2">+ Créer un nouvel événement</button>
+      </div>
+
+      <div id="events-grid" class="events-grid hidden"></div>
+    </section>
+
+    <!-- ---------- CREATE EVENT ---------- -->
+    <section id="sub-create" class="hidden">
+      <div class="breadcrumb"><span class="back-link" data-back="events">← Tes événements</span></div>
+      <div class="content-head">
+        <div>
+          <h1 class="display">Créer un nouvel événement</h1>
+          <p>Configure ta galerie, choisis un thème et génère ton QR code.</p>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:28px; flex-wrap:wrap; align-items:flex-start;">
+        <form class="form-card" id="form-create-event" style="flex:1; min-width:320px;">
+          <div class="field">
+            <label class="field-label">Nom de l'événement</label>
+            <input type="text" id="ev-name" required placeholder="Mariage — Clara & Junior">
+          </div>
+          <div class="field">
+            <label class="field-label">Message de bienvenue</label>
+            <textarea id="ev-welcome" placeholder="Merci de revivre ce moment avec nous !"></textarea>
+          </div>
+          <div class="form-grid-2">
+            <div class="field">
+              <label class="field-label">Date de l'événement</label>
+              <input type="date" id="ev-date">
+            </div>
+            <div class="field">
+              <label class="field-label">Expiration de la galerie</label>
+              <input type="date" id="ev-expiry">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Lieu / Adresse</label>
+            <input type="text" id="ev-location" placeholder="Kinshasa, RDC">
+          </div>
+          <div class="field">
+            <label class="field-label">Photo de couverture</label>
+            <img class="cover-preview" id="cover-preview">
+            <label class="cover-upload" for="ev-cover-input">🖼 Clique pour télécharger une photo de couverture</label>
+            <input type="file" accept="image/*" id="ev-cover-input" class="hidden">
+          </div>
+          <div class="field">
+            <label class="field-label">Thème de couleur de l'événement</label>
+            <div class="theme-swatches">
+              <div class="swatch selected" data-color="#C6962E" style="background:#C6962E;"></div>
+              <div class="swatch" data-color="#8E4A45" style="background:#8E4A45;"></div>
+              <div class="swatch" data-color="#3E5C4E" style="background:#3E5C4E;"></div>
+              <div class="swatch" data-color="#3C4A73" style="background:#3C4A73;"></div>
+              <div class="swatch" data-color="#7A5A8A" style="background:#7A5A8A;"></div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-gold">Créer l'événement & générer le QR →</button>
+          </div>
+        </form>
+
+        <div class="qr-panel hidden" id="qr-result">
+          <div style="font-size:26px;">✨</div>
+          <h3 class="display">Événement créé !</h3>
+          <p>Le QR code est prêt à télécharger ou imprimer.</p>
+          <div id="qrcode-box"></div>
+          <div class="qr-url" id="qr-url-text">zuafoto.app/e/…</div>
+          <div class="qr-actions">
+            <button class="btn btn-navy btn-sm" id="btn-download-qr">Télécharger le QR</button>
+            <button class="btn btn-ghost btn-sm" id="btn-copy-url">Copier l'URL</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- EVENT DETAIL ---------- -->
+    <section id="sub-detail" class="hidden">
+      <div class="breadcrumb"><span class="back-link" data-back="events">← Tes événements</span></div>
+      <div class="content-head">
+        <div>
+          <h1 class="display" id="detail-title">Événement</h1>
+          <p id="detail-sub">Galerie ouverte · expire le —</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-ghost btn-sm" id="btn-detail-qr">QR code</button>
+        </div>
+      </div>
+
+      <div class="detail-tabs">
+        <div class="detail-tab active" data-tab="galerie">Galerie</div>
+        <div class="detail-tab" data-tab="reglages">Réglages</div>
+      </div>
+
+      <!-- GALERIE TAB -->
+      <div id="tab-galerie">
+        <div class="sub-tabs">
+          <div class="sub-tab active" data-modtab="pending">En attente <span class="mono" id="count-pending">(3)</span></div>
+          <div class="sub-tab" data-modtab="approved">Publiées <span class="mono" id="count-approved">(0)</span></div>
+        </div>
+
+        <div class="mod-toolbar">
+          <div class="mod-toolbar-left">
+            <button class="btn btn-ghost btn-sm" id="btn-select-all">Tout sélectionner</button>
+            <span class="mod-count" id="selected-count">0 sélectionnée(s)</span>
+          </div>
+          <div class="mod-actions">
+            <button class="btn btn-gold btn-sm" id="btn-approve-selected">Publier la sélection</button>
+            <button class="btn btn-danger-ghost btn-sm" id="btn-reject-selected">Rejeter</button>
+          </div>
+        </div>
+
+        <div class="photo-grid" id="photo-grid-pending"></div>
+        <div class="photo-grid hidden" id="photo-grid-approved"></div>
+      </div>
+
+      <!-- REGLAGES TAB -->
+      <div id="tab-reglages" class="hidden">
+        <div class="settings-card">
+          <h3>Permissions des invités</h3>
+          <p class="desc">Définit ce que les invités peuvent faire dans la galerie.</p>
+          <label class="radio-row"><input type="radio" name="perm" checked>
+            <span><span class="rr-title">Consultation uniquement</span><div class="rr-sub">Les invités voient la galerie mais ne peuvent pas télécharger les photos.</div></span>
+          </label>
+          <label class="radio-row"><input type="radio" name="perm">
+            <span><span class="rr-title">Consultation + partage de lien</span><div class="rr-sub">Les invités peuvent aussi partager le lien de la galerie.</div></span>
+          </label>
+        </div>
+
+        <div class="settings-card">
+          <h3>Visibilité de la galerie</h3>
+          <p class="desc">Contrôle si tes photos passent par une validation avant publication.</p>
+          <label class="radio-row"><input type="radio" name="vis">
+            <span><span class="rr-title">Accessible via QR / lien</span><div class="rr-sub">Les photos apparaissent dès leur envoi, sans validation.</div></span>
+          </label>
+          <label class="radio-row"><input type="radio" name="vis" checked>
+            <span><span class="rr-title">Approbation de l'organisateur requise</span><div class="rr-sub">Chaque photo doit être validée avant d'apparaître publiquement.</div></span>
+          </label>
+        </div>
+
+        <div class="settings-card">
+          <h3>Code d'accès (facultatif)</h3>
+          <p class="desc">Ajoute un mot de passe pour restreindre l'accès à la galerie.</p>
+          <div class="field" style="margin-bottom:0;">
+            <input type="text" placeholder="Laisser vide pour aucun code">
+          </div>
+        </div>
+
+        <button class="btn btn-gold" id="btn-save-settings">Enregistrer les réglages</button>
+      </div>
+    </section>
+
+    <!-- ---------- ACCOUNT ---------- -->
+    <section id="sub-account" class="hidden">
+      <div class="content-head">
+        <div>
+          <h1 class="display">Paramètres du compte</h1>
+          <p>Mets à jour tes informations de connexion.</p>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h3>📧 Adresse e-mail de contact</h3>
+        <p class="desc">Utilisée pour te connecter au tableau de bord.</p>
+        <div class="field"><label class="field-label">E-mail actuel</label><input type="text" disabled value="organisateur@zuafoto.app"></div>
+        <div class="form-grid-2">
+          <div class="field"><label class="field-label">Nouvel e-mail</label><input type="email"></div>
+          <div class="field"><label class="field-label">Confirmer le nouvel e-mail</label><input type="email"></div>
+        </div>
+        <button class="btn btn-navy btn-sm">Enregistrer l'e-mail</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>📱 Numéro de téléphone</h3>
+        <p class="desc">Numéro de contact pour l'organisateur.</p>
+        <div class="field"><label class="field-label">Numéro actuel</label><input type="text" disabled value="Non configuré"></div>
+        <div class="form-grid-2">
+          <div class="field"><label class="field-label">Nouveau numéro</label><input type="tel"></div>
+          <div class="field"><label class="field-label">Confirmer le numéro</label><input type="tel"></div>
+        </div>
+        <button class="btn btn-navy btn-sm">Enregistrer le téléphone</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>🔐 Mot de passe</h3>
+        <p class="desc">Modifie le mot de passe d'accès au dashboard.</p>
+        <div class="field"><label class="field-label">Mot de passe actuel</label><input type="password"></div>
+        <div class="form-grid-2">
+          <div class="field"><label class="field-label">Nouveau mot de passe</label><input type="password"></div>
+          <div class="field"><label class="field-label">Confirmer</label><input type="password"></div>
+        </div>
+        <button class="btn btn-navy btn-sm">Enregistrer le mot de passe</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toast-text">Enregistré</span></div>
+
+<script>
+  // ======= STATE =======
+  // Events are now fetched from the real API (functions/api/events/*).
+  // Photo moderation below is still mock — that's the next piece to wire up (Cloudinary).
+  const state = {
+    events: [],
+    currentEventId: null,
+    selectedPhotos: new Set(),
+  };
+
+  const frameGradients = [
+    'linear-gradient(135deg,#1B2440,#2C3C68)', 'linear-gradient(135deg,#241d10,#4a3b18)', 'linear-gradient(135deg,#172438,#22344f)'
+  ];
+
+  function toast(msg){
+    const t = document.getElementById('toast');
+    document.getElementById('toast-text').textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=> t.classList.remove('show'), 2200);
+  }
+
+  function cameraSVG(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="#F5EFE1"><path d="M4 7h3l2-3h6l2 3h3v12H4z" stroke-width="1.4"/><circle cx="12" cy="13" r="3.5" stroke-width="1.4"/></svg>';
+  }
+
+  // ---------- LOGIN ----------
+  async function checkExistingSession(){
+    try{
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if(data.authenticated){
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        loadEvents();
+      }
+    }catch(err){ /* API not reachable yet (e.g. opened as a local file) — stay on login */ }
+  }
+
+  document.getElementById('form-login-step1').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const trustDevice = document.getElementById('login-trust').checked;
+    const errorEl = document.getElementById('login-error');
+    const btn = document.getElementById('login-submit-btn');
+
+    errorEl.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Connexion…';
+
+    try{
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, trustDevice }),
+      });
+      const data = await res.json();
+
+      if(!res.ok){
+        errorEl.textContent = 'E-mail ou mot de passe incorrect.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('view-login').classList.add('hidden');
+      document.getElementById('view-dashboard').classList.remove('hidden');
+      loadEvents();
+    }catch(err){
+      errorEl.textContent = 'Impossible de contacter le serveur. Le Worker est-il déployé ?';
+      errorEl.classList.remove('hidden');
+    }finally{
+      btn.disabled = false;
+      btn.textContent = 'Se connecter →';
+    }
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', async ()=>{
+    try{ await fetch('/api/auth/logout', { method: 'POST' }); }catch(err){}
+    document.getElementById('view-dashboard').classList.add('hidden');
+    document.getElementById('view-login').classList.remove('hidden');
+  });
+
+  checkExistingSession();
+
+  // ---------- SIDEBAR NAV ----------
+  document.querySelectorAll('.sidebar-link[data-nav]').forEach(link=>{
+    link.addEventListener('click', ()=>{
+      document.querySelectorAll('.sidebar-link[data-nav]').forEach(l=>l.classList.remove('active'));
+      link.classList.add('active');
+      showSub(link.dataset.nav === 'events' ? 'events' : 'account');
+    });
+  });
+
+  function showSub(name){
+    ['events','create','detail','account'].forEach(id=>{
+      document.getElementById('sub-'+id).classList.toggle('hidden', id !== name);
+    });
+  }
+  document.querySelectorAll('[data-back]').forEach(el=> el.addEventListener('click', ()=> showSub(el.dataset.back)) );
+
+  // ---------- CREATE EVENT ----------
+  document.getElementById('btn-new-event').addEventListener('click', ()=> showSub('create'));
+  document.getElementById('btn-new-event-2').addEventListener('click', ()=> showSub('create'));
+
+  let selectedTheme = '#C6962E';
+  document.querySelectorAll('.swatch').forEach(sw=>{
+    sw.addEventListener('click', ()=>{
+      document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('selected'));
+      sw.classList.add('selected');
+      selectedTheme = sw.dataset.color;
+    });
+  });
+
+  document.getElementById('ev-cover-input').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = document.getElementById('cover-preview');
+      img.src = reader.result; img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('form-create-event').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type=submit]');
+    const originalLabel = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Création…';
+
+    const payload = {
+      name: document.getElementById('ev-name').value || 'Événement sans titre',
+      welcomeMessage: document.getElementById('ev-welcome').value,
+      eventDate: document.getElementById('ev-date').value,
+      expiryDate: document.getElementById('ev-expiry').value,
+      location: document.getElementById('ev-location').value,
+      theme: selectedTheme,
+    };
+
+    try{
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if(!res.ok){
+        toast(data.error === 'unauthorized' ? 'Session expirée — reconnecte-toi.' : 'Erreur lors de la création');
+        return;
+      }
+
+      const ev = data.event;
+      state.events.unshift(ev);
+      renderEvents();
+
+      // Reveal QR panel — uses the server-assigned slug (deduplication happens there)
+      const url = `zuafoto.app/e/${ev.slug}`;
+      document.getElementById('qr-result').classList.remove('hidden');
+      document.getElementById('qr-url-text').textContent = url;
+      document.getElementById('qrcode-box').innerHTML = '';
+      // eslint-disable-next-line no-undef
+      new QRCode(document.getElementById('qrcode-box'), { text: 'https://'+url, width:168, height:168, colorDark: '#10162A', colorLight:'#ffffff' });
+
+      document.getElementById('btn-copy-url').onclick = ()=>{
+        navigator.clipboard.writeText('https://'+url).then(()=> toast('URL copiée'));
+      };
+      document.getElementById('btn-download-qr').onclick = ()=>{
+        const canvas = document.querySelector('#qrcode-box canvas');
+        if(!canvas) return;
+        const link = document.createElement('a');
+        link.download = ev.slug + '-qr.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+
+      toast('Événement créé');
+    }catch(err){
+      toast('Impossible de contacter le serveur.');
+    }finally{
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+    }
+  });
+
+  async function loadEvents(){
+    try{
+      const res = await fetch('/api/events');
+      if(!res.ok) return; // not authenticated or not deployed yet — leave empty state showing
+      const data = await res.json();
+      state.events = data.events || [];
+      renderEvents();
+    }catch(err){ /* API not reachable — stay on empty state */ }
+  }
+
+  function renderEvents(){
+    document.getElementById('stat-events').textContent = state.events.length;
+    document.getElementById('stat-active').textContent = state.events.filter(e=>e.status==='live').length;
+    document.getElementById('stat-photos').textContent = state.events.reduce((a,e)=>a+e.photosPending+e.photosApproved,0);
+    document.getElementById('stat-guests').textContent = state.events.reduce((a,e)=>a+e.guests,0);
+
+    const grid = document.getElementById('events-grid');
+    const empty = document.getElementById('events-empty');
+    if(state.events.length === 0){
+      grid.classList.add('hidden'); empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden'); grid.classList.remove('hidden');
+    grid.innerHTML = state.events.map(ev => `
+      <div class="event-card" data-id="${ev.id}">
+        <div class="event-cover" style="background:linear-gradient(135deg, ${ev.theme}, #1B2440);">
+          <span class="event-badge badge-live">● En direct</span>
+        </div>
+        <div class="event-body">
+          <h3>${ev.name}</h3>
+          <div class="event-meta">Expire le ${ev.expiryDate ? ev.expiryDate : 'non définie'}</div>
+          <div class="event-stats-mini">
+            <span><b>${ev.photosPending}</b> en attente</span>
+            <span><b>${ev.photosApproved}</b> publiées</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('.event-card').forEach(card=>{
+      card.addEventListener('click', ()=> openEventDetail(card.dataset.id));
+    });
+  }
+
+  // ---------- EVENT DETAIL ----------
+  function openEventDetail(id){
+    const ev = state.events.find(e=>e.id===id);
+    if(!ev) return;
+    state.currentEventId = id;
+    state.currentEventSlug = ev.slug;
+    document.getElementById('detail-title').textContent = ev.name;
+    document.getElementById('detail-sub').textContent = `Galerie ouverte · expire le ${ev.expiryDate || 'non définie'}`;
+    loadPendingPhotos();
+    showSub('detail');
+  }
+
+  let pendingPhotos = [];
+
+  async function loadPendingPhotos(){
+    const pendingGrid = document.getElementById('photo-grid-pending');
+    pendingGrid.innerHTML = '<p style="color:var(--muted-on-cream); font-size:13.5px;">Chargement…</p>';
+    try{
+      const res = await fetch(`/api/moderation/${encodeURIComponent(state.currentEventSlug)}/pending`);
+      const data = await res.json();
+      if(!res.ok){
+        pendingGrid.innerHTML = '<p style="color:var(--muted-on-cream); font-size:13.5px;">Impossible de charger les photos.</p>';
+        return;
+      }
+      pendingPhotos = data.photos || [];
+      state.selectedPhotos.clear();
+      document.getElementById('selected-count').textContent = '0 sélectionnée(s)';
+      document.getElementById('count-pending').textContent = `(${pendingPhotos.length})`;
+      renderPhotoGrid();
+    }catch(err){
+      pendingGrid.innerHTML = '<p style="color:var(--muted-on-cream); font-size:13.5px;">Serveur injoignable.</p>';
+    }
+  }
+
+  function renderPhotoGrid(){
+    const pendingGrid = document.getElementById('photo-grid-pending');
+
+    if(pendingPhotos.length === 0){
+      pendingGrid.innerHTML = '<p style="color:var(--muted-on-cream); font-size:13.5px;">Aucune photo en attente.</p>';
+      return;
+    }
+
+    pendingGrid.innerHTML = pendingPhotos.map((p,i)=>`
+      <div class="photo-card" data-public-id="${p.publicId}">
+        <div class="photo-check" data-public-id="${p.publicId}">✓</div>
+        <div class="photo-frame" style="background:${frameGradients[i % frameGradients.length]};">
+          ${p.url ? `<img src="${p.url}" alt="" style="width:100%;height:100%;object-fit:cover;">` : cameraSVG()}
+        </div>
+        <div class="photo-info">
+          <div class="photo-name">${p.name}</div>
+          <div class="photo-tag">${p.tag}</div>
+          <div class="photo-buttons">
+            <button class="btn btn-gold btn-sm" data-approve="${p.publicId}">Publier</button>
+            <button class="btn btn-danger-ghost btn-sm" data-reject="${p.publicId}">Rejeter</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    pendingGrid.querySelectorAll('.photo-check').forEach(chk=>{
+      chk.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const id = chk.dataset.publicId;
+        if(state.selectedPhotos.has(id)){ state.selectedPhotos.delete(id); chk.classList.remove('checked'); }
+        else { state.selectedPhotos.add(id); chk.classList.add('checked'); }
+        document.getElementById('selected-count').textContent = state.selectedPhotos.size + ' sélectionnée(s)';
+      });
+    });
+
+    pendingGrid.querySelectorAll('[data-approve]').forEach(btn=>{
+      btn.addEventListener('click', ()=> approvePhoto(btn.dataset.approve));
+    });
+    pendingGrid.querySelectorAll('[data-reject]').forEach(btn=>{
+      btn.addEventListener('click', ()=> rejectPhoto(btn.dataset.reject));
+    });
+  }
+
+  async function approvePhoto(publicId){
+    try{
+      const res = await fetch(`/api/moderation/${encodeURIComponent(state.currentEventSlug)}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publicId }),
+      });
+      if(!res.ok){ toast('Erreur lors de la publication'); return; }
+      pendingPhotos = pendingPhotos.filter(p => p.publicId !== publicId);
+      state.selectedPhotos.delete(publicId);
+      document.getElementById('count-pending').textContent = `(${pendingPhotos.length})`;
+      renderPhotoGrid();
+      toast('Photo publiée dans la galerie');
+    }catch(err){ toast('Serveur injoignable'); }
+  }
+
+  async function rejectPhoto(publicId){
+    try{
+      const res = await fetch(`/api/moderation/${encodeURIComponent(state.currentEventSlug)}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publicId }),
+      });
+      if(!res.ok){ toast('Erreur lors du rejet'); return; }
+      pendingPhotos = pendingPhotos.filter(p => p.publicId !== publicId);
+      state.selectedPhotos.delete(publicId);
+      document.getElementById('count-pending').textContent = `(${pendingPhotos.length})`;
+      renderPhotoGrid();
+      toast('Photo rejetée');
+    }catch(err){ toast('Serveur injoignable'); }
+  }
+
+  document.getElementById('btn-select-all').addEventListener('click', ()=>{
+    document.querySelectorAll('#photo-grid-pending .photo-check').forEach(chk=>{
+      chk.classList.add('checked'); state.selectedPhotos.add(chk.dataset.publicId);
+    });
+    document.getElementById('selected-count').textContent = state.selectedPhotos.size + ' sélectionnée(s)';
+  });
+  document.getElementById('btn-approve-selected').addEventListener('click', async ()=>{
+    const ids = [...state.selectedPhotos];
+    for(const id of ids){ await approvePhoto(id); }
+  });
+  document.getElementById('btn-reject-selected').addEventListener('click', async ()=>{
+    const ids = [...state.selectedPhotos];
+    for(const id of ids){ await rejectPhoto(id); }
+  });
+
+  document.querySelectorAll('.detail-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.detail-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-galerie').classList.toggle('hidden', tab.dataset.tab !== 'galerie');
+      document.getElementById('tab-reglages').classList.toggle('hidden', tab.dataset.tab !== 'reglages');
+    });
+  });
+
+  document.querySelectorAll('.sub-tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.sub-tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('photo-grid-pending').classList.toggle('hidden', t.dataset.modtab !== 'pending');
+      document.getElementById('photo-grid-approved').classList.toggle('hidden', t.dataset.modtab !== 'approved');
+    });
+  });
+
+  document.getElementById('btn-save-settings').addEventListener('click', ()=> toast('Réglages enregistrés'));
+  document.getElementById('btn-detail-qr').addEventListener('click', ()=> toast('QR code disponible depuis l\'écran de création'));
+
+  renderEvents();
+</script>
+
+</body>
+</html>
