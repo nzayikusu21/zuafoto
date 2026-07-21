@@ -5,5 +5,9 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS"
-  }
+  },
+  "kv_namespaces": [
+    { "binding": "ADMIN_KV", "id": "6bb4e7dd83ec4f279477a88197cc6019" },
+    { "binding": "EVENTS_KV", "id": "b192b81d522141359b4399f71379d594" }
+  ]
 }
