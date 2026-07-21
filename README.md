@@ -114,6 +114,7 @@ same project — KV data and env vars persist across deploys.
   download/re-upload), reject (delete)
 - The guest-facing gallery page (`/e/:slug`) — fully wired to the above
 
+
 **Still mocked — next pieces to build:**
 - Event cover photo upload doesn't persist yet (preview is local-only)
 - Réglages (guest permissions, gallery visibility, access code) don't persist
