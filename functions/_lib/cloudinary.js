@@ -1,17 +1,3 @@
-// Some hosting setups only allow a single environment variable to be added.
-// To work around that, all three Cloudinary credentials are combined into
-// one JSON variable: CLOUDINARY_CONFIG = {"cloud_name":"...","api_key":"...","api_secret":"..."}
-export function getCloudinaryConfig(env) {
-  if (!env.CLOUDINARY_CONFIG) {
-    throw new Error('CLOUDINARY_CONFIG environment variable is not set');
-  }
-  try {
-    return JSON.parse(env.CLOUDINARY_CONFIG);
-  } catch {
-    throw new Error('CLOUDINARY_CONFIG is not valid JSON');
-  }
-}
-
 export async function sha1Hex(str) {
   const enc = new TextEncoder();
   const digest = await crypto.subtle.digest('SHA-1', enc.encode(str));
@@ -28,7 +14,11 @@ export function getCloudinaryConfig(env) {
   if (!raw) {
     throw new Error('CLOUDINARY_CONFIG env var is not set');
   }
-  return JSON.parse(raw);
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error('CLOUDINARY_CONFIG is not valid JSON');
+  }
 }
 
 export function cloudinaryBasicAuth(apiKey, apiSecret) {
