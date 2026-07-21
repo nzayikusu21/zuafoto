@@ -1,0 +1,7 @@
+functions/
+src/
+wrangler.jsonc
+README.md
+create-admin.js
+_redirects
+.git/
