@@ -1,5 +1,5 @@
 # zuafoto — deploy guide
-
+ 
 ## Structure
 ```
 index.html                              -> marketing landing page (/)
