@@ -1,9 +1,14 @@
 {
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "zuafoto",
-  "compatibility_date": "2026-07-01",
-  "main": "src/worker.js",
+  "compatibility_date": "2026-07-21",
+  "observability": {
+    "enabled": true
+  },
   "assets": {
-    "directory": ".",
-    "binding": "ASSETS"
-  }
+    "directory": "."
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
 }
