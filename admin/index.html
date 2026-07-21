@@ -686,7 +686,7 @@
       renderEvents();
 
       // Reveal QR panel — uses the server-assigned slug (deduplication happens there)
-      const url = `zuafoto.app/e/${ev.slug}`;
+     const url = `${location.host}/e/${ev.slug}`;
       document.getElementById('qr-result').classList.remove('hidden');
       document.getElementById('qr-url-text').textContent = url;
       document.getElementById('qrcode-box').innerHTML = '';
