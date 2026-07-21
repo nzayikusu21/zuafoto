@@ -677,7 +677,7 @@
       const data = await res.json();
 
       if(!res.ok){
-        toast(data.error === 'unauthorized' ? 'Session expirée — reconnecte-toi.' : 'Erreur lors de la création');
+        toast(data.error === 'unauthorized' ? 'Session expirée — reconnecte-toi.' : 'Erreur: ' + (data.error || res.status) + (data.detail ? ' — ' + data.detail : ''));
         return;
       }
 
@@ -706,8 +706,8 @@
       };
 
       toast('Événement créé');
-    }catch(err){
-      toast('Impossible de contacter le serveur.');
+}catch(err){
+      toast('Erreur JS: ' + err.message);
     }finally{
       submitBtn.disabled = false;
       submitBtn.textContent = originalLabel;
