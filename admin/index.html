@@ -126,7 +126,7 @@
   .breadcrumb .back-link{ cursor:pointer; font-weight:600; color:var(--ink-on-cream); }
   .breadcrumb .back-link:hover{ color:var(--flash); }
 
-  /* stats */ 
+  /* stats */
   .stats-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:34px; }
   .stat-card{ background:#FBF7EF; border:1px solid var(--cream-border); border-radius:var(--radius); padding:20px 22px; }
   .stat-card b{ display:block; font-family:'Fraunces',serif; font-size:30px; font-weight:500; margin-bottom:4px; }
@@ -190,6 +190,18 @@
   .qr-panel h3{ font-size:18px; margin:14px 0 4px; }
   .qr-panel p{ font-size:13.5px; color:var(--muted-on-cream); margin:0 0 22px; }
   #qrcode-box{ display:flex; justify-content:center; margin-bottom:20px; padding:16px; background:#fff; border-radius:12px; }
+  .qr-modal-overlay{
+    position:fixed; inset:0; background:rgba(16,22,42,0.7); z-index:300;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .qr-modal-card{
+    background:#FBF7EF; border-radius:24px; padding:32px; max-width:400px; width:100%; text-align:center;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,0.6); position:relative;
+  }
+  .qr-modal-close{
+    position:absolute; top:14px; right:14px; width:28px; height:28px; border-radius:50%;
+    background:var(--cream-border); border:none; cursor:pointer; font-size:15px; color:var(--ink-on-cream);
+  }
   .qr-url{
     font-family:'JetBrains Mono',monospace; font-size:12.5px; background:var(--ink); color:var(--paper);
     padding:10px 14px; border-radius:8px; margin-bottom:16px; word-break:break-all;
@@ -528,6 +540,20 @@
 
 <div class="toast" id="toast"><span class="dot"></span><span id="toast-text">Enregistré</span></div>
 
+<div class="qr-modal-overlay hidden" id="qr-modal-overlay">
+  <div class="qr-modal-card">
+    <button class="qr-modal-close" id="qr-modal-close">✕</button>
+    <h3 class="display" style="font-size:18px; margin:0 0 4px;" id="qr-modal-title">QR code</h3>
+    <p style="font-size:13.5px; color:var(--muted-on-cream); margin:0 0 20px;">Scanne pour ouvrir la galerie de l'événement.</p>
+    <div id="qrcode-box-modal" style="display:flex; justify-content:center; margin-bottom:20px; padding:16px; background:#fff; border-radius:12px;"></div>
+    <div class="qr-url" id="qr-modal-url-text" style="font-family:'JetBrains Mono',monospace; font-size:12.5px; background:var(--ink); color:var(--paper); padding:10px 14px; border-radius:8px; margin-bottom:16px; word-break:break-all;"></div>
+    <div class="qr-actions" style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn btn-navy btn-sm" id="btn-modal-download-qr">Télécharger le QR</button>
+      <button class="btn btn-ghost btn-sm" id="btn-modal-copy-url">Copier l'URL</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ======= STATE =======
   // Events are now fetched from the real API (functions/api/events/*).
@@ -686,7 +712,7 @@
       renderEvents();
 
       // Reveal QR panel — uses the server-assigned slug (deduplication happens there)
-     const url = `${location.host}/e/${ev.slug}`;
+      const url = `${location.host}/e/${ev.slug}`;
       document.getElementById('qr-result').classList.remove('hidden');
       document.getElementById('qr-url-text').textContent = url;
       document.getElementById('qrcode-box').innerHTML = '';
@@ -706,7 +732,7 @@
       };
 
       toast('Événement créé');
-}catch(err){
+    }catch(err){
       toast('Erreur JS: ' + err.message);
     }finally{
       submitBtn.disabled = false;
@@ -901,7 +927,36 @@
   });
 
   document.getElementById('btn-save-settings').addEventListener('click', ()=> toast('Réglages enregistrés'));
-  document.getElementById('btn-detail-qr').addEventListener('click', ()=> toast('QR code disponible depuis l\'écran de création'));
+  function showQrModal(name, slug){
+    const url = `${location.host}/e/${slug}`;
+    document.getElementById('qr-modal-title').textContent = name;
+    document.getElementById('qr-modal-url-text').textContent = url;
+    const box = document.getElementById('qrcode-box-modal');
+    box.innerHTML = '';
+    // eslint-disable-next-line no-undef
+    new QRCode(box, { text: 'https://'+url, width:168, height:168, colorDark: '#10162A', colorLight:'#ffffff' });
+
+    document.getElementById('btn-modal-copy-url').onclick = ()=>{
+      navigator.clipboard.writeText('https://'+url).then(()=> toast('URL copiée'));
+    };
+    document.getElementById('btn-modal-download-qr').onclick = ()=>{
+      const canvas = box.querySelector('canvas');
+      if(!canvas) return;
+      const link = document.createElement('a');
+      link.download = slug + '-qr.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+
+    document.getElementById('qr-modal-overlay').classList.remove('hidden');
+  }
+  document.getElementById('qr-modal-close').addEventListener('click', ()=>{
+    document.getElementById('qr-modal-overlay').classList.add('hidden');
+  });
+  document.getElementById('btn-detail-qr').addEventListener('click', ()=>{
+    const ev = state.events.find(e => e.slug === state.currentEventSlug);
+    showQrModal(ev ? ev.name : state.currentEventSlug, state.currentEventSlug);
+  });
 
   renderEvents();
 </script>
